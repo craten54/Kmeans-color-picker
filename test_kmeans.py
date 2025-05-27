@@ -6,7 +6,8 @@ from skimage import color
 import base64
 import os
 
-# --- Fungsi untuk mengonversi gambar lokal ke Base64 ---
+# --- Fungsi untuk mengonversi gambar lokal ke Base64 (tidak lagi digunakan secara langsung untuk st.image) ---
+# Fungsi ini dipertahankan hanya untuk pemeriksaan keberadaan file.
 def get_base64_encoded_image(image_path):
     if not os.path.exists(image_path):
         return None # Return None to indicate file not found
@@ -16,13 +17,8 @@ def get_base64_encoded_image(image_path):
     except Exception as e:
         return None
 
-# --- Path ke gambar gummy Anda (akan tampil di sidebar) ---
-gummy_image_path = "gummy.png" # No longer necessarily a background image, but the actual image
+gummy_image_path = "gummy_eskrim.jpg"
 
-# --- Konversi gambar gummy.png ke Base64 (hanya untuk referensi, st.image akan handle ini) ---
-# Sebenarnya untuk st.image, kita tidak perlu Base64 lagi. Langsung path saja.
-# Namun, saya biarkan fungsi get_base64_encoded_image untuk debugging atau kebutuhan lain.
-# St.image will handle the image loading directly from the path.
 gummy_image_loaded_successfully = os.path.exists(gummy_image_path)
 
 
@@ -65,13 +61,24 @@ st.markdown(f"""
     }}
 
     /* Target the inner wrapper for sidebar content to remove its default padding/margin */
-    .stSidebar > div:first-child {{ /* This usually targets the outer most div within stSidebar */
+    /* st-emotion-cache-1r6dm16 (or similar data-testid="stColumn") is often the wrapper for st.image */
+    .stSidebar > div > div > div {{ /* Target the div that usually wraps the image element */
         padding: 0 !important;
         margin: 0 !important;
         background-color: transparent !important; /* Ensure it's transparent */
         height: 100% !important; /* Ensure it takes full height */
         display: flex !important; /* Use flexbox to center/cover the image inside */
         flex-direction: column !important; /* Align content vertically if any */
+        align-items: center !important;
+        justify-content: center !important;
+    }}
+    /* Also target the element-container that Streamlit creates around an st.image */
+    .stSidebar .element-container {{
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
         align-items: center !important;
         justify-content: center !important;
     }}
@@ -263,23 +270,9 @@ def get_dominant_colors_lab(image, num_colors=5):
 # === Konten Sidebar (Hanya Gambar Gummy) ===
 with st.sidebar:
     if gummy_image_loaded_successfully:
-        # Menampilkan gambar gummy.png di sidebar.
-        # use_column_width=True sangat penting di sini.
-        # CSS .stSidebar img akan memastikan gambar ini mengisi penuh.
         st.image(gummy_image_path, use_column_width=True, channels="RGB", output_format="PNG")
-        # Menambahkan sedikit gaya tambahan pada elemen div yang membungkus gambar
-        st.markdown("""
-            <style>
-                .stSidebar .element-container img {
-                    object-fit: cover !important;
-                    height: 100% !important;
-                    width: 100% !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
     else:
-        st.warning("Gambar `gummy.png` tidak dapat dimuat di sidebar. Memastikan file ada dan nama benar.")
-        # Fallback background color for sidebar if image fails
+        st.warning(f"Gambar sidebar '{gummy_image_path}' tidak dapat dimuat. Pastikan file ada di direktori yang sama.")
         st.markdown(f"""
             <style>
                 .stSidebar {{
