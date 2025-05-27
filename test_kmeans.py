@@ -3,43 +3,66 @@ from PIL import Image
 import numpy as np
 from sklearn.cluster import KMeans
 from skimage import color 
+import base64
 
-# === CSS Custom untuk mempercantik tampilan ===
-st.markdown("""
+def get_base64_encoded_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode('utf-8')
+
+background_image_path = "gummy.png" 
+
+try:
+    encoded_image = get_base64_encoded_image(background_image_path)
+    background_image_url = f"data:image/png;base64,{encoded_image}" 
+except FileNotFoundError:
+    st.error(f"Error: Gambar background '{background_image_path}' tidak ditemukan. Pastikan berada di folder yang sama.")
+    background_image_url = ""
+
+st.markdown(f"""
     <style>
-    body {
-        background-color: #1e1e2f;
+    body {{
+        background-color: #1e1e2f; /* Fallback color */
         color: #ffffff;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+    }}
 
-    h1, h2, h3 {
+    /* Mengatur gambar latar belakang untuk seluruh aplikasi Streamlit */
+    .stApp {{
+        background-image: url("{background_image_url}");
+        background-size: cover; /* Menutupi seluruh area */
+        background-position: center; /* Memposisikan gambar di tengah */
+        background-repeat: no-repeat; /* Jangan ulangi gambar */
+        background-attachment: fixed; /* Membuat background tetap saat scroll */
+        background-color: #1e1e2f; /* Warna fallback jika gambar tidak muncul */
+    }}
+
+    h1, h2, h3 {{
         color: #f7f7f7;
         text-align: center;
         padding-top: 20px;
-    }
+        /* Tambahkan background semi-transparan untuk keterbacaan teks di atas gambar */
+        background-color: rgba(0, 0, 0, 0.5); 
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 20px;
+    }}
 
-    /* Mengatur warna latar belakang untuk elemen utama Streamlit */
-    .stApp {
-        background-color: #1e1e2f;
-    }
-
-    /* Mengatur gaya untuk kontainer utama */
-    .css-1aumxhk { /* Ini mungkin berubah tergantung versi Streamlit, periksa dengan inspector */
-        background-color: #2b2b3c !important;
+    /* Mengatur gaya untuk kontainer utama konten agar terlihat di atas background */
+    .css-1aumxhk {{ /* Ini mungkin berubah tergantung versi Streamlit, periksa dengan inspector */
+        background-color: rgba(43, 43, 60, 0.8) !important; /* Latar belakang semi-transparan */
         padding: 20px;
         border-radius: 10px;
         margin-bottom: 20px;
-    }
+    }}
 
     /* Gaya untuk gambar yang diunggah */
-    img {
+    img {{
         border-radius: 10px;
         box-shadow: 0px 0px 10px #000000aa;
-    }
+    }}
 
     /* Gaya untuk tombol */
-    .stButton > button {
+    .stButton > button {{
         background-color: #4CAF50;
         color: white;
         font-weight: bold;
@@ -47,14 +70,14 @@ st.markdown("""
         border-radius: 8px;
         padding: 10px 20px;
         cursor: pointer;
-    }
+    }}
 
-    .stButton > button:hover {
+    .stButton > button:hover {{
         background-color: #45a049;
-    }
+    }}
 
     /* Gaya untuk kotak warna dalam palet */
-    .palette-color {
+    .palette-color {{
         display: inline-block;
         width: 100%; /* Agar memenuhi kolom Streamlit */
         height: 80px;
@@ -63,18 +86,18 @@ st.markdown("""
         border: 2px solid #fff;
         box-shadow: 0 0 5px #ccc;
         cursor: pointer; /* Menunjukkan bisa diklik (meskipun tidak ada fungsi klik di sini) */
-    }
+    }}
 
     /* Gaya untuk st.color_picker yang tampil di bawah kotak warna */
-    .stColorPicker > div > div > div:first-child {
+    .stColorPicker > div > div > div:first-child {{
         display: none; /* Sembunyikan label 'Warna X' bawaan color_picker */
-    }
-    .stColorPicker label {
+    }}
+    .stColorPicker label {{
         display: none; /* Sembunyikan label 'Warna X' bawaan color_picker */
-    }
-    .stColorPicker {
+    }}
+    .stColorPicker {{
         margin-top: 5px; /* Sedikit spasi antara kotak warna dan color picker */
-    }
+    }}
     </style>
 """, unsafe_allow_html=True)
 
