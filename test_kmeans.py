@@ -10,115 +10,90 @@ def get_base64_encoded_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
-# --- Path ke gambar gummy Anda (yang akan mengisi kolom kiri) ---
-gummy_image_path = "gummy.png"
+# --- Path ke gambar gummy Anda (akan jadi background sidebar) ---
+gummy_sidebar_bg_path = "gummy.png"
 
-# --- Konversi gambar gummy.png ke Base64 ---
-gummy_image_display_url = ""
-gummy_image_loaded = False
+# --- Konversi gambar gummy.png ke Base64 untuk background sidebar ---
+gummy_sidebar_bg_url = ""
 try:
-    gummy_encoded_image = get_base64_encoded_image(gummy_image_path)
-    gummy_image_display_url = f"data:image/png;base64,{gummy_encoded_image}"
-    gummy_image_loaded = True
+    encoded_gummy_sidebar_bg = get_base64_encoded_image(gummy_sidebar_bg_path)
+    gummy_sidebar_bg_url = f"data:image/png;base64,{encoded_gummy_sidebar_bg}"
 except FileNotFoundError:
-    st.error(f"Error: Gambar '{gummy_image_path}' tidak ditemukan. Pastikan berada di folder yang sama.")
+    st.error(f"Error: Gambar background sidebar '{gummy_sidebar_bg_path}' tidak ditemukan. Pastikan berada di folder yang sama.")
 except Exception as e:
-    st.error(f"Error saat memproses '{gummy_image_path}': {e}")
+    st.error(f"Error saat memproses '{gummy_sidebar_bg_path}' sebagai background sidebar: {e}")
 
-# === CSS Custom untuk tata letak Coca-Cola dan palet warna ===
+# === CSS Custom untuk mempercantik tampilan ===
 st.markdown(f"""
     <style>
-    /* Menghapus celah di atas dan mengatur background dasar untuk seluruh halaman */
-    html, body {{
+    /* Reset margin dan padding default Streamlit dan browser */
+    html, body, #root, [data-testid="stAppViewContainer"] {{
         margin: 0 !important;
         padding: 0 !important;
-        height: 100vh !important; /* Pastikan body mengambil tinggi penuh viewport */
-        overflow-x: hidden; /* Hindari scroll horizontal */
-        background-color: #FEEAE8 !important; /* Warna fallback jika gambar tidak muncul */
-        color: #51302D !important; /* Warna teks default */
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        height: 100vh !important; /* Pastikan tinggi penuh viewport */
+        overflow-x: hidden !important; /* Hindari scrollbar horizontal yang tidak diinginkan */
+        background-color: #FEEAE8 !important; /* Fallback jika main content tidak diatur */
     }}
 
-    /* Pastikan .stApp juga tidak memiliki background image global dan padding/margin tambahan */
+    /* Mengatur background untuk main content area (di luar sidebar) */
     .stApp {{
-        background-image: none !important; /* Hapus background image dari stApp */
-        background-color: #FEEAE8 !important; /* Warna dasar stApp */
+        background-color: #FEEAE8 !important; /* Background main content dari palet (#FEEAE8) */
+        background-image: none !important; /* Pastikan tidak ada gambar background di sini */
         padding: 0 !important;
         margin: 0 !important;
-        min-height: 100vh; /* Pastikan tinggi minimal 100% viewport height */
-        display: flex; /* Gunakan flexbox untuk layout utama */
-        flex-direction: row; /* Konten akan disusun secara horizontal */
+        height: 100vh !important; /* Pastikan tinggi penuh */
     }}
 
-    /* Gaya untuk sidebar Streamlit (jika ada) */
-    .st-emotion-cache-1c7y2vl {{ /* ini adalah class untuk sidebar di Streamlit versi terbaru */
-        background-color: #FDC5CB !important; /* Warna sidebar */
-        padding: 0 !important;
-        flex-shrink: 0; /* Jangan biarkan sidebar menyusut */
+    /* Gaya untuk Sidebar */
+    .stSidebar {{
+        background-image: url("{gummy_sidebar_bg_url}") !important;
+        background-size: cover !important; /* Menutupi seluruh area sidebar */
+        background-position: center !important; /* Memposisikan gambar di tengah */
+        background-repeat: no-repeat !important; /* Jangan ulangi gambar */
+        background-attachment: fixed !important; /* Membuat background tetap saat scroll */
+        min-width: 400px !important; /* Lebar minimum sidebar, atur sesuai keinginan */
+        width: 400px !important; /* Lebar tetap sidebar */
+        max-width: 400px !important; /* Lebar maksimum sidebar */
+        padding: 0 !important; /* Hapus padding internal sidebar agar gambar mengisi penuh */
+        box-shadow: 5px 0px 15px rgba(0, 0, 0, 0.4) !important; /* Bayangan di sisi kanan sidebar */
+        overflow-y: hidden !important; /* Hindari scroll di sidebar jika hanya berisi gambar */
     }}
 
-    /* Container utama konten Streamlit (yang membungkus col1 dan col2) */
-    .st-emotion-cache-z5fcl4 > div > div {{
-        background-color: transparent !important; /* Kontainer utama ini harus transparan */
-        padding: 0 !important;
-        margin: 0 !important;
-        display: flex; /* Mengatur flexbox untuk kolom */
-        width: 100%; /* Memastikan ini mengambil lebar penuh */
-        height: 100vh; /* Mengambil tinggi penuh viewport */
+    /* Menyembunyikan tombol expand/collapse sidebar */
+    [data-testid="stSidebarCollapseButton"] {{
+        display: none !important;
     }}
 
-    /* Kolom Kiri untuk gambar gummy.png */
-    .st-emotion-cache-1r6dm16:first-child, /* Target kolom pertama yang dihasilkan oleh st.columns */
-    [data-testid="stColumn"] > div:first-child {{
-        background-color: #FEEAE8 !important; /* Background kolom kiri (paling terang) */
-        flex: 1; /* Ambil proporsi lebar yang ditentukan di st.columns */
+    /* Menyembunyikan konten selain gambar di dalam sidebar jika ada (misal padding/margin default) */
+    .stSidebar > div > div {{
         padding: 0 !important;
         margin: 0 !important;
-        display: flex;
-        align-items: center; /* Pusatkan gambar secara vertikal */
-        justify-content: center; /* Pusatkan gambar secara horizontal */
-        overflow: hidden; /* Pastikan gambar tidak meluap */
+        background-color: transparent !important; /* Pastikan transparan agar gambar terlihat */
     }}
-    .left-column-image-wrapper {{
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #FEEAE8; /* Pastikan background wrapper juga senada */
-    }}
-    .left-column-image-wrapper img {{
-        width: 100%; /* Gambar mengisi lebar wrapper */
-        height: 100%; /* Gambar mengisi tinggi wrapper */
-        object-fit: cover; /* Penting: agar gambar mengisi dan responsif tanpa distorsi */
-        border-radius: 0 !important; /* Hapus border radius jika ingin edge-to-edge */
-        box-shadow: none !important; /* Hapus bayangan jika ingin seamless */
+    /* Pastikan gambar di dalam sidebar mengisi penuh dan terpusat */
+    .stSidebar img {{
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }}
 
-    /* Kolom Kanan untuk konten aplikasi */
-    .st-emotion-cache-1r6dm16:last-child, /* Target kolom kedua */
-    [data-testid="stColumn"] > div:last-child {{
-        background-color: #F9CAC5 !important; /* Background kolom kanan (pink sedang) */
-        flex: 2; /* Ambil proporsi lebar yang ditentukan di st.columns */
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow-y: auto; /* Aktifkan scroll jika kontennya panjang */
-        height: 100vh; /* Mengambil tinggi penuh viewport */
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start; /* Konten dimulai dari atas */
+    /* Untuk main content area (di luar sidebar) */
+    .main .block-container {{
+        background-color: transparent !important; /* Pastikan ini transparan agar warna stApp terlihat */
+        padding-top: 2rem !important; /* Padding atas untuk konten utama */
+        padding-right: 2rem !important;
+        padding-left: 2rem !important;
+        padding-bottom: 2rem !important;
+        color: #51302D !important; /* Warna teks utama untuk konten */
     }}
-    .right-column-content {{
-        padding: 30px 40px !important; /* Padding lebih besar di dalam konten */
-        flex-grow: 1; /* Pastikan konten mengisi ruang yang tersedia */
-    }}
-
 
     h1, h2, h3 {{
         color: #51302D !important; /* Warna gelap untuk judul */
         text-align: center;
         padding: 15px !important;
-        background-color: #FDC5CB !important; /* #FDC5CB untuk judul */
+        background-color: #FDC5CB !important; /* #FDC5CB untuk judul di main content */
         border-radius: 10px !important;
         margin-bottom: 30px !important;
         box-shadow: 0px 3px 8px rgba(81, 48, 45, 0.3) !important;
@@ -229,34 +204,20 @@ st.markdown(f"""
         margin-bottom: 15px !important;
     }}
 
-    /* Mengatasi padding default di block-container */
-    .main .block-container {{
-        padding-top: 0 !important;
-        padding-right: 0 !important;
-        padding-left: 0 !important;
-        padding-bottom: 0 !important;
-    }}
-
-    /* Penyesuaian responsif untuk layar kecil */
+    /* Penyesuaian responsif untuk layar kecil (mobile) */
     @media (max-width: 768px) {{
-        .stApp {{
-            flex-direction: column !important; /* Ubah ke tumpukan vertikal di layar kecil */
+        .stSidebar {{
+            min-width: 100% !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 200px !important; /* Tinggi tetap untuk gambar gummy di atas */
+            overflow-y: hidden !important;
         }}
-        .st-emotion-cache-1r6dm16:first-child,
-        .st-emotion-cache-1r6dm16:last-child {{
-            flex: none !important; /* Hapus flex grow */
-            width: 100% !important; /* Ambil lebar penuh */
-            height: auto !important; /* Sesuaikan tinggi otomatis */
-            padding: 20px !important;
+        .main .block-container {{
+            padding: 1rem !important; /* Kurangi padding di layar kecil */
         }}
-        .left-column-image-wrapper {{
-            height: 300px; /* Batasi tinggi gambar di layar kecil */
-        }}
-        .right-column-content {{
-            padding: 20px !important; /* Kurangi padding di layar kecil */
-        }}
+        /* Konten aplikasi di main content akan secara otomatis berada di bawah sidebar */
     }}
-
     </style>
 """, unsafe_allow_html=True)
 
@@ -293,70 +254,65 @@ def get_dominant_colors_lab(image, num_colors=5):
     
     return dominant_rgb_colors
 
-# === Tata Letak Utama dengan st.columns ===
-# Gunakan flexbox di CSS pada .stApp dan elemen kolom untuk mengontrol layout.
-# Proporisi width untuk kolom kiri dan kanan
-col1, col2 = st.columns([1, 2]) # Misalnya, gummy 1 bagian lebar, aplikasi 2 bagian lebar
-
-with col1:
-    # Wrapper untuk gambar gummy agar bisa di-align dan di-cover
-    st.markdown('<div class="left-column-image-wrapper">', unsafe_allow_html=True)
-    if gummy_image_loaded:
-        # Gunakan st.image agar Streamlit bisa mengelola gambar, kemudian CSS akan menargetnya
-        # Atau tetap pakai markdown jika ingin kontrol lebih (tapi st.image lebih mudah untuk responsif)
-        # Saya akan menggunakan <img> tag dengan CSS untuk kontrol penuh over object-fit
-        st.markdown(f"""
-            <img src="{gummy_image_display_url}" alt="Gummy Character">
-            """, unsafe_allow_html=True)
+# === Konten Sidebar (Hanya Gambar Gummy) ===
+with st.sidebar:
+    if gummy_sidebar_bg_url:
+        # Gunakan st.markdown untuk menyisipkan gambar sebagai bagian dari sidebar,
+        # yang akan diatur oleh CSS sebagai background
+        # Tidak perlu st.image di sini karena kita ingin background, bukan elemen gambar biasa.
+        # st.markdown(f'<div class="sidebar-image-container" style="background-image: url({gummy_sidebar_bg_url});"></div>', unsafe_allow_html=True)
+        # Atau, lebih sederhana, biarkan CSS .stSidebar yang mengatur background-nya.
+        # Jika Anda ingin ada elemen <img> di dalam sidebar, cukup seperti ini:
+        # st.image(gummy_sidebar_bg_path, use_container_width=True) # Ini akan dimasukkan ke dalam sidebar
+        # Untuk kasus ini, karena Anda ingin "background" dari sidebar, kita tidak perlu elemen di sini
+        # Cukup pastikan CSS .stSidebar bekerja.
+        pass # Tidak ada konten Streamlit di dalam sidebar ini, hanya CSS background
     else:
-        st.warning("Gambar `gummy.png` tidak dapat dimuat di sini.")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.warning("Gambar `gummy.png` tidak dapat dimuat di sidebar.")
 
-with col2:
-    st.markdown('<div class="right-column-content">', unsafe_allow_html=True) # Wrapper untuk konten di kolom kanan
-    
-    st.title("🎨 Image Color Picker")
-    st.write("Unggah gambar untuk mendapatkan **5 warna paling dominan**.")
 
-    uploaded_file = st.file_uploader("📁 Pilih sebuah gambar untuk dianalisis...", type=["jpg", "png", "jpeg"])
+# === Konten Aplikasi Utama (di area main content) ===
 
-    # === Opsi pemilihan ruang warna ===
-    color_space_choice = st.radio(
-        "Pilih ruang warna untuk analisis:",
-        ('RGB', 'Lab (Disarankan untuk hasil yang lebih intuitif)'),
-        horizontal=True
-    )
+st.title("🎨 Image Color Picker")
+st.write("Unggah gambar untuk mendapatkan **5 warna paling dominan**.")
 
-    if uploaded_file is None:
-        st.info("Silakan unggah gambar di sini untuk memulai analisis.")
-    else:
-        image = Image.open(uploaded_file)
-        st.subheader("📷 Gambar yang Diunggah")
-        st.image(image, caption='Gambar Asli', use_container_width=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.write("🔍 Menganalisis warna dominan...")
+uploaded_file = st.file_uploader("📁 Pilih sebuah gambar untuk dianalisis...", type=["jpg", "png", "jpeg"])
 
-        dominant_colors = []
-        if color_space_choice == 'RGB':
-            dominant_colors = get_dominant_colors_rgb(image, num_colors=5)
-        else: # Lab
-            dominant_colors = get_dominant_colors_lab(image, num_colors=5)
+# === Opsi pemilihan ruang warna ===
+color_space_choice = st.radio(
+    "Pilih ruang warna untuk analisis:",
+    ('RGB', 'Lab (Disarankan untuk hasil yang lebih intuitif)'),
+    horizontal=True
+)
 
-        st.subheader("🎯 Palet Warna Dominan:")
+if uploaded_file is None:
+    st.info("Silakan unggah gambar di sini untuk memulai analisis.")
+else:
+    image = Image.open(uploaded_file)
+    st.subheader("📷 Gambar yang Diunggah")
+    st.image(image, caption='Gambar Asli', use_container_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("🔍 Menganalisis warna dominan...")
 
-        # Buat kolom untuk setiap warna (horizontal)
-        cols_palette_display = st.columns(5)
+    dominant_colors = []
+    if color_space_choice == 'RGB':
+        dominant_colors = get_dominant_colors_rgb(image, num_colors=5)
+    else: # Lab
+        dominant_colors = get_dominant_colors_lab(image, num_colors=5)
 
-        for i, color_rgb in enumerate(dominant_colors):
-            hex_color = '#%02x%02x%02x' % (color_rgb.item(0), color_rgb.item(1), color_rgb.item(2))
-            
-            with cols_palette_display[i]: 
-                st.markdown(
-                    f'<div class="palette-color" style="background-color: {hex_color};"></div>',
-                    unsafe_allow_html=True
-                )
-                st.color_picker(f"Warna {i+1}", hex_color, label_visibility="collapsed", key=f"cp{i}")
-                st.markdown(f"<p style='text-align: center; margin-bottom: 0;'>RGB: ({color_rgb.item(0)}, {color_rgb.item(1)}, {color_rgb.item(2)})</p>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center; margin-top: 0;'>Hex: {hex_color}</p>", unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True) # Penutup wrapper konten kanan
+    st.subheader("🎯 Palet Warna Dominan:")
+
+    # Buat kolom untuk setiap warna (horizontal)
+    cols_palette_display = st.columns(5)
+
+    for i, color_rgb in enumerate(dominant_colors):
+        hex_color = '#%02x%02x%02x' % (color_rgb.item(0), color_rgb.item(1), color_rgb.item(2))
+        
+        with cols_palette_display[i]: 
+            st.markdown(
+                f'<div class="palette-color" style="background-color: {hex_color};"></div>',
+                unsafe_allow_html=True
+            )
+            st.color_picker(f"Warna {i+1}", hex_color, label_visibility="collapsed", key=f"cp{i}")
+            st.markdown(f"<p style='text-align: center; margin-bottom: 0;'>RGB: ({color_rgb.item(0)}, {color_rgb.item(1)}, {color_rgb.item(2)})</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; margin-top: 0;'>Hex: {hex_color}</p>", unsafe_allow_html=True)
