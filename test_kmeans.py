@@ -4,25 +4,20 @@ import numpy as np
 from sklearn.cluster import KMeans
 from skimage import color
 import base64
-import os # Import os module for path checking
+import os
 
 # --- Fungsi untuk mengonversi gambar lokal ke Base64 ---
 def get_base64_encoded_image(image_path):
-    # Check if the file exists first
     if not os.path.exists(image_path):
-        st.error(f"File not found: {image_path}. Please ensure the image is in the same directory as the script.")
-        return None
+        return None # Return None to indicate file not found
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode('utf-8')
     except Exception as e:
-        st.error(f"Error reading image file {image_path}: {e}")
         return None
 
-# --- Path ke gambar gummy Anda (akan jadi background sidebar) ---
 gummy_sidebar_bg_path = "gummy.png"
 
-# --- Konversi gambar gummy.png ke Base64 untuk background sidebar ---
 gummy_sidebar_bg_url = ""
 gummy_image_loaded_successfully = False
 encoded_gummy_sidebar_bg = get_base64_encoded_image(gummy_sidebar_bg_path)
@@ -30,7 +25,7 @@ if encoded_gummy_sidebar_bg:
     gummy_sidebar_bg_url = f"data:image/png;base64,{encoded_gummy_sidebar_bg}"
     gummy_image_loaded_successfully = True
 else:
-    st.warning(f"Sidebar background image '{gummy_sidebar_bg_path}' could not be loaded. Sidebar background will be fallback color.")
+    pass
 
 # === CSS Custom untuk mempercantik tampilan ===
 st.markdown(f"""
@@ -41,12 +36,10 @@ st.markdown(f"""
         padding: 0 !important;
         height: 100vh !important; /* Pastikan tinggi penuh viewport */
         overflow-x: hidden !important; /* Hindari scrollbar horizontal yang tidak diinginkan */
-        /* Fallback background color for entire page if main content is transparent */
-        background-color: #FEEAE8 !important; 
+        background-color: #FEEAE8 !important; /* Fallback background color for entire page */
     }}
 
     /* Mengatur background untuk main content area (di luar sidebar) */
-    /* .stApp adalah kontainer utama untuk seluruh aplikasi termasuk sidebar */
     .stApp {{
         background-color: #FEEAE8 !important; /* Background main content dari palet (#FEEAE8) */
         background-image: none !important; /* Pastikan tidak ada gambar background di sini */
@@ -58,7 +51,8 @@ st.markdown(f"""
 
     /* Gaya untuk Sidebar */
     .stSidebar {{
-        {"background-image: url(" + gummy_sidebar_bg_url + ") !important;" if gummy_image_loaded_successfully else "background-color: #FDC5CB !important;"}
+        /* Menggunakan warna fallback jika gambar tidak berhasil dimuat */
+        {"background-color: #FDC5CB !important;" if not gummy_image_loaded_successfully else ""} 
         background-size: cover !important; /* Menutupi seluruh area sidebar */
         background-position: center !important; /* Memposisikan gambar di tengah */
         background-repeat: no-repeat !important; /* Jangan ulangi gambar */
@@ -76,18 +70,22 @@ st.markdown(f"""
         display: none !important;
     }}
 
-    /* Menyembunyikan konten selain gambar di dalam sidebar jika ada (misal padding/margin default) */
-    .stSidebar > div > div {{ /* Target the inner wrapper for content */
+    /* Target the inner wrapper for sidebar content to remove its default padding/margin */
+    .stSidebar > div > div {{ 
         padding: 0 !important;
         margin: 0 !important;
-        background-color: transparent !important; /* Pastikan transparan agar gambar terlihat */
-        height: 100% !important; /* Ensure it takes full height to allow image to cover */
+        background-color: transparent !important; /* Ensure it's transparent */
+        height: 100% !important; /* Ensure it takes full height */
+        display: flex !important; /* Use flexbox to center/cover the image inside */
+        align-items: center !important;
+        justify-content: center !important;
     }}
+    
     /* Pastikan gambar di dalam sidebar mengisi penuh dan terpusat */
     .stSidebar img {{
         width: 100% !important;
         height: 100% !important;
-        object-fit: cover !important;
+        object-fit: cover !important; /* Agar gambar mengisi penuh tanpa distorsi */
         border-radius: 0 !important;
         box-shadow: none !important;
     }}
@@ -230,7 +228,6 @@ st.markdown(f"""
         .main .block-container {{
             padding: 1rem !important; /* Kurangi padding di layar kecil */
         }}
-        /* Konten aplikasi di main content akan secara otomatis berada di bawah sidebar */
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -270,12 +267,15 @@ def get_dominant_colors_lab(image, num_colors=5):
     
     return dominant_rgb_colors
 
-# === Konten Sidebar (Hanya Gambar Gummy sebagai background) ===
+# === Konten Sidebar (Hanya Gambar Gummy) ===
 with st.sidebar:
-    # We put nothing here because we want the image to be the *background* of the sidebar.
-    # The CSS takes care of placing the image.
-    # If you put st.image here, it will be a separate element *on top of* the background.
-    pass # No Streamlit elements here, CSS handles the background image
+    if gummy_image_loaded_successfully:
+        # Menampilkan gambar gummy.png di sidebar.
+        # CSS akan memastikan gambar ini mengisi penuh sebagai latar belakang visual.
+        st.image(gummy_sidebar_bg_path, use_column_width=True, channels="RGB")
+    else:
+        # Menampilkan pesan error jika gambar tidak bisa dimuat
+        st.warning("Gambar `gummy.png` tidak dapat dimuat di sidebar.")
 
 
 # === Konten Aplikasi Utama (di area main content) ===
