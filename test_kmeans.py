@@ -17,7 +17,7 @@ def get_base64_encoded_image(image_path):
     except Exception as e:
         return None
 
-gummy_image_path = "gummy_eskrim.jpg"
+gummy_image_path = "Gummy_eskrim.jpg"
 
 gummy_image_loaded_successfully = os.path.exists(gummy_image_path)
 
