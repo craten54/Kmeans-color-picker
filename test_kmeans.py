@@ -10,96 +10,109 @@ def get_base64_encoded_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
-# --- Path ke gambar background/utama Anda ---
-gummy_image_path = "gummy.png" # Asumsi gummy.png adalah gambar karakter yang Anda inginkan di kiri
+# --- Path ke gambar utama Anda (karakter gummy) ---
+gummy_image_path = "gummy.png"
 
 # --- Konversi gambar gummy.png ke Base64 untuk ditampilkan di kolom kiri ---
-gummy_encoded_image = ""
+gummy_image_display_url = ""
+gummy_image_loaded = False
 try:
     gummy_encoded_image = get_base64_encoded_image(gummy_image_path)
     gummy_image_display_url = f"data:image/png;base64,{gummy_encoded_image}"
     gummy_image_loaded = True
 except FileNotFoundError:
     st.error(f"Error: Gambar '{gummy_image_path}' tidak ditemukan. Pastikan berada di folder yang sama.")
-    gummy_image_loaded = False
 except Exception as e:
     st.error(f"Error saat memproses '{gummy_image_path}': {e}")
-    gummy_image_loaded = False
 
 
-# === CSS Custom untuk mempercantik tampilan dengan palet baru dan tata letak kolom ===
+# === CSS Custom untuk palet warna baru dan tata letak kolom yang diperbaiki ===
 st.markdown(f"""
     <style>
-    /* Mengatur warna dasar body */
-    body {{
-        background-color: #FEEAE8; /* Warna paling terang dari palet */
-        color: #51302D; /* Warna teks utama */
+    /* Menghapus celah di atas dan mengatur background dasar untuk seluruh halaman */
+    html, body {{
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #FEEAE8 !important; /* Warna paling terang dari palet sebagai background dasar */
+        color: #51302D !important; /* Warna teks utama */
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }}
 
-    /* Hapus background global dari stApp, karena kita akan pakai kolom */
+    /* Pastikan .stApp juga tidak memiliki background image dan padding/margin tambahan */
     .stApp {{
-        background-image: none;
-        background-color: #FEEAE8; /* Pastikan warna dasar yang sama */
-        padding: 0; /* Hapus padding default stApp */
+        background-image: none !important;
+        background-color: #FEEAE8 !important; /* Pastikan warna dasar yang sama */
+        padding: 0 !important;
+        margin: 0 !important;
     }}
 
-    /* Container utama Streamlit (biasanya elemen yang membungkus konten) */
-    /* st-emotion-cache-1c7y2vl untuk main container, css-1aumxhk untuk sidebar, st-emotion-cache-z5fcl4 untuk stVerticalBlock, [data-testid="stVerticalBlock"] > div > div untuk konten utama */
-    /* Kita akan target elemen yang membungkus konten di kolom kanan */
+    /* Streamlit main container, pastikan tidak ada background yang menimpa */
     .st-emotion-cache-1c7y2vl, 
     .css-1aumxhk, 
-    .st-emotion-cache-z5fcl4, 
-    [data-testid="stVerticalBlock"] > div > div {{
-        background-color: transparent !important; /* Biarkan transparan di level ini */
-        padding: 0 !important; /* Hapus padding default */
+    .st-emotion-cache-z5fcl4 {{
+        background-color: transparent !important; /* Transparan agar warna body terlihat */
+        padding: 0 !important;
     }}
 
     /* Ini adalah div yang membungkus konten aplikasi di kolom kanan */
     .right-column-content {{
-        background-color: rgba(249, 202, 197, 0.9); /* #F9CAC5 dengan sedikit transparansi */
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0px 0px 15px rgba(81, 48, 45, 0.3); /* Bayangan gelap senada */
-        margin-left: 10px; /* Jarak dari gambar kiri */
-        margin-right: 10px;
-        flex-grow: 1; /* Pastikan mengisi ruang */
-        height: fit-content; /* Sesuaikan tinggi dengan konten */
+        background-color: rgba(249, 202, 197, 0.95); /* #F9CAC5 dengan transparansi minimal */
+        padding: 25px; /* Tambah padding agar konten tidak terlalu mepet */
+        border-radius: 15px;
+        box-shadow: 0px 5px 20px rgba(81, 48, 45, 0.4); /* Bayangan gelap yang lebih menonjol */
+        margin: 20px; /* Jarak dari tepi dan gambar kiri */
+        height: auto; /* Sesuaikan tinggi dengan konten */
+        min-height: calc(100vh - 40px); /* Minimal tinggi agar terisi penuh */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start; /* Konten dimulai dari atas */
+    }}
+
+    /* Kolom kiri untuk gambar gummy.png */
+    .left-column-image {{
+        display: flex;
+        align-items: center; /* Vertically center the image */
+        justify-content: center; /* Horizontally center the image */
+        padding: 20px; /* Padding di sekitar gambar */
+        background-color: #FEEAE8; /* Background kolom kiri */
+        height: 100vh; /* Tinggi penuh viewport */
+        position: sticky; /* Agar gambar tetap di tempatnya saat scroll */
+        top: 0;
     }}
 
     h1, h2, h3 {{
-        color: #51302D; /* Warna gelap untuk judul */
+        color: #51302D !important; /* Warna gelap untuk judul */
         text-align: center;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        background-color: rgba(253, 197, 203, 0.7); /* #FDC5CB semi-transparan untuk judul */
-        border-radius: 8px;
-        margin-bottom: 20px;
-        box-shadow: 0px 2px 5px rgba(81, 48, 45, 0.2);
+        padding: 15px; /* Tambah padding judul */
+        background-color: #FDC5CB !important; /* #FDC5CB untuk judul */
+        border-radius: 10px;
+        margin-bottom: 25px;
+        box-shadow: 0px 3px 8px rgba(81, 48, 45, 0.3);
     }}
 
-    /* Mengatur gaya untuk gambar yang diunggah di aplikasi */
+    /* Gaya untuk gambar yang diunggah di aplikasi */
     .stImage {{
         border-radius: 10px;
-        box-shadow: 0px 0px 10px rgba(81, 48, 45, 0.5); /* Bayangan gelap */
-        margin-bottom: 15px;
+        box-shadow: 0px 0px 15px rgba(81, 48, 45, 0.6); /* Bayangan gelap lebih kuat */
+        margin-bottom: 20px;
     }}
 
     /* Gaya untuk tombol */
     .stButton > button {{
-        background-color: #51302D; /* Warna gelap dari palet */
-        color: #FEEAE8; /* Warna terang untuk teks tombol */
+        background-color: #51302D !important; /* Warna gelap dari palet */
+        color: #FEEAE8 !important; /* Warna terang untuk teks tombol */
         font-weight: bold;
         border: none;
         border-radius: 8px;
-        padding: 10px 20px;
+        padding: 12px 25px; /* Ukuran tombol lebih besar */
         cursor: pointer;
-        box-shadow: 0px 4px 8px rgba(81, 48, 45, 0.3);
-        transition: background-color 0.3s ease;
+        box-shadow: 0px 5px 10px rgba(81, 48, 45, 0.4);
+        transition: background-color 0.3s ease, transform 0.2s ease;
     }}
 
     .stButton > button:hover {{
-        background-color: #7a4a47; /* Sedikit lebih terang/beda saat hover */
+        background-color: #7a4a47 !important; /* Sedikit lebih terang/beda saat hover */
+        transform: translateY(-2px); /* Efek sedikit terangkat saat hover */
     }}
 
     /* Gaya untuk kotak warna dalam palet */
@@ -109,53 +122,77 @@ st.markdown(f"""
         height: 80px;
         margin: 0;
         border-radius: 10px;
-        border: 2px solid #51302D; /* Border gelap senada */
-        box-shadow: 0 0 8px rgba(81, 48, 45, 0.4);
+        border: 3px solid #51302D !important; /* Border gelap senada lebih tebal */
+        box-shadow: 0 0 10px rgba(81, 48, 45, 0.5);
         cursor: pointer;
     }}
 
     /* Gaya untuk st.color_picker yang tampil di bawah kotak warna */
     .stColorPicker > div > div > div:first-child {{
-        display: none; /* Sembunyikan label 'Warna X' bawaan color_picker */
+        display: none !important; /* Sembunyikan label 'Warna X' bawaan color_picker */
     }}
     .stColorPicker label {{
-        display: none; /* Sembunyikan label 'Warna X' bawaan color_picker */
+        display: none !important; /* Sembunyikan label 'Warna X' bawaan color_picker */
     }}
     .stColorPicker {{
-        margin-top: 5px;
-        padding-bottom: 10px; /* Tambah padding bawah untuk color picker */
+        margin-top: 8px;
+        padding-bottom: 15px;
     }}
     
     /* Gaya untuk informasi RGB/Hex */
     p {{
-        color: #51302D; /* Warna teks untuk RGB/Hex */
-        font-size: 0.9em;
+        color: #51302D !important; /* Warna teks untuk RGB/Hex */
+        font-size: 0.95em;
+        text-align: center;
+        margin: 2px 0; /* Kurangi margin vertikal */
     }}
 
     /* Gaya untuk File Uploader */
     .stFileUploader {{
-        background-color: rgba(253, 197, 203, 0.5); /* Warna #FDC5CB semi-transparan */
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
-        border: 1px dashed #51302D;
+        background-color: rgba(253, 197, 203, 0.7) !important; /* Warna #FDC5CB lebih jelas */
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border: 2px dashed #51302D !important;
     }}
     
     /* Gaya untuk radio button */
     .stRadio > label {{
-        color: #51302D; /* Warna teks untuk label radio */
+        color: #51302D !important; /* Warna teks untuk label radio */
         font-weight: bold;
+        margin-bottom: 10px;
     }}
     .stRadio div[role="radiogroup"] > label {{
-        color: #51302D; /* Warna teks untuk opsi radio */
+        color: #51302D !important; /* Warna teks untuk opsi radio */
     }}
 
-    /* Info box */
+    /* Info box, Warning box, Success box - pastikan warnanya dari palet */
     .stAlert {{
-        background-color: rgba(254, 234, 232, 0.9); /* #FEEAE8 semi-transparan */
-        color: #51302D;
-        border-left: 5px solid #FDC5CB; /* Border warna highlight */
         border-radius: 8px;
+        margin-bottom: 20px;
+        padding: 15px;
+        font-weight: 500;
+        box-shadow: 0px 2px 5px rgba(81, 48, 45, 0.2);
+    }}
+    .stAlert.info {{
+        background-color: #FDC5CB !important; /* Warna light pink */
+        color: #51302D !important; /* Warna teks gelap */
+        border-left: 5px solid #51302D !important; /* Border gelap */
+    }}
+    .stAlert.warning {{
+        background-color: #F9CAC5 !important; /* Warna pink sedang */
+        color: #51302D !important;
+        border-left: 5px solid #51302D !important;
+    }}
+    .stAlert.success {{
+        background-color: #FEEAE8 !important; /* Warna paling terang */
+        color: #51302D !important;
+        border-left: 5px solid #51302D !important;
+    }}
+
+    /* Mengatur jarak antar elemen secara global jika diperlukan */
+    .stText, .stMarkdown, .stSubheader {{
+        margin-bottom: 15px;
     }}
 
     </style>
@@ -167,7 +204,6 @@ def get_dominant_colors_rgb(image, num_colors=5):
     Mengambil warna dominan dari gambar menggunakan K-Means pada ruang warna RGB.
     """
     image_array = np.array(image)
-    # Reshape array menjadi 2D (piksel, RGB)
     reshaped_image = image_array.reshape(-1, 3)
     
     kmeans = KMeans(n_clusters=num_colors, random_state=42, n_init=10)
@@ -183,37 +219,32 @@ def get_dominant_colors_lab(image, num_colors=5):
     Ini sering memberikan hasil yang lebih intuitif secara visual.
     """
     image_array = np.array(image)
-    
-    # Ubah gambar dari RGB ke Lab
-    # Perhatikan: scikit-image mengharapkan input gambar dalam range [0, 1] jika float,
-    # atau [0, 255] jika uint8. PIL Image.open() biasanya memberikan uint8.
     lab_image = color.rgb2lab(image_array)
     
-    # Reshape array menjadi 2D (piksel, Lab)
-    reshaped_lab_image = lab_image.reshape(-1, 3) # Perbaikan: Gunakan lab_image, bukan lab_lab_image
+    reshaped_lab_image = lab_image.reshape(-1, 3)
     
-    # Latih model K-Means pada data piksel di ruang Lab
     kmeans = KMeans(n_clusters=num_colors, random_state=42, n_init=10)
     kmeans.fit(reshaped_lab_image)
     
     dominant_lab_colors = kmeans.cluster_centers_
-    
-    # Ubah kembali dari Lab ke RGB
-    # Hasilnya akan dalam float [0, 1], jadi perlu dikalikan 255 dan diubah ke int
     dominant_rgb_colors = (color.lab2rgb(dominant_lab_colors) * 255).astype(int)
     
     return dominant_rgb_colors
 
 # === Tata Letak dengan Kolom ===
-col1, col2 = st.columns([1, 2]) # Kolom kiri 1 bagian, kolom kanan 2 bagian
+# Gunakan st.columns([width_col1, width_col2])
+# Saya sarankan 1 untuk gambar dan 2 untuk aplikasi, atau 0.8 dan 2 tergantung preferensi visual
+col1, col2 = st.columns([0.8, 2]) # Kolom kiri 0.8 bagian, kolom kanan 2 bagian
 
 with col1:
+    st.markdown('<div class="left-column-image">', unsafe_allow_html=True)
     if gummy_image_loaded:
         st.markdown(f"""
-            <img src="{gummy_image_display_url}" style="width: 100%; height: auto; border-radius: 10px; box-shadow: 0px 0px 20px rgba(81, 48, 45, 0.7);">
+            <img src="{gummy_image_display_url}" style="width: 100%; height: auto; border-radius: 15px; box-shadow: 0px 0px 25px rgba(81, 48, 45, 0.8);">
             """, unsafe_allow_html=True)
     else:
         st.warning("Gambar `gummy.png` tidak dapat dimuat di sini.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     st.markdown('<div class="right-column-content">', unsafe_allow_html=True) # Wrapper untuk konten di kolom kanan
@@ -250,8 +281,7 @@ with col2:
         # Buat kolom untuk setiap warna (horizontal)
         cols_palette_display = st.columns(5)
 
-        for i, color_rgb in enumerate(dominant_colors): # Ganti nama variabel agar tidak konflik dengan `color` dari skimage
-            # Menggunakan .item() untuk mendapatkan nilai skalar dari array NumPy, menghindari error format
+        for i, color_rgb in enumerate(dominant_colors):
             hex_color = '#%02x%02x%02x' % (color_rgb.item(0), color_rgb.item(1), color_rgb.item(2))
             
             with cols_palette_display[i]: 
@@ -260,7 +290,7 @@ with col2:
                     unsafe_allow_html=True
                 )
                 st.color_picker(f"Warna {i+1}", hex_color, label_visibility="collapsed", key=f"cp{i}")
-                st.markdown(f"<p style='text-align: center; font-size: 0.9em; margin-bottom: 0;'>RGB: ({color_rgb.item(0)}, {color_rgb.item(1)}, {color_rgb.item(2)})</p>", unsafe_allow_html=True)
-                st.markdown(f"<p style='text-align: center; font-size: 0.9em; margin-top: 0;'>Hex: {hex_color}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align: center; margin-bottom: 0;'>RGB: ({color_rgb.item(0)}, {color_rgb.item(1)}, {color_rgb.item(2)})</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align: center; margin-top: 0;'>Hex: {hex_color}</p>", unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True) # Penutup wrapper konten kanan
